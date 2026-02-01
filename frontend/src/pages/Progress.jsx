@@ -318,20 +318,20 @@ export default function Progress() {
                 </div>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
                   {entry.weight && (
-                    <span style={{ fontSize: 16, color: '#ffffff', fontWeight: 600 }}>
+                    <span style={{ fontSize: 16, color: '#000000', fontWeight: 600 }}>
                       <Scale size={14} style={{ marginRight: 4, verticalAlign: 'middle', color: 'var(--neon-pink)' }} />
                       {entry.weight} lbs
                     </span>
                   )}
                   {entry.bodyFat && (
-                    <span style={{ fontSize: 16, color: '#ffffff', fontWeight: 600 }}>
+                    <span style={{ fontSize: 16, color: '#000000', fontWeight: 600 }}>
                       <Percent size={14} style={{ marginRight: 4, verticalAlign: 'middle', color: 'var(--neon-blue)' }} />
                       {entry.bodyFat}%
                     </span>
                   )}
                 </div>
                 {entry.notes && (
-                  <p style={{ marginTop: 8, fontSize: 13, color: '#ffffff', lineHeight: 1.5 }}>
+                  <p style={{ marginTop: 8, fontSize: 13, color: '#000000', lineHeight: 1.5 }}>
                     {entry.notes}
                   </p>
                 )}
