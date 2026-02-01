@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
               initAdminDB(creds);
 
               const email = userData.email;
-              const isSuperAdmin = email === adminConfig.superAdminEmail;
+              const isSuperAdmin = adminConfig.superAdminEmails.includes(email);
 
               // Check platform lockdown
               try {
@@ -186,7 +186,7 @@ export function AuthProvider({ children }) {
             if (creds) {
               initAdminDB(creds);
 
-              const isSuperAdmin = email === adminConfig.superAdminEmail;
+              const isSuperAdmin = adminConfig.superAdminEmails.includes(email);
 
               // Check platform lockdown
               try {
@@ -264,7 +264,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.email && adminConfig.adminEmails.includes(user.email);
 
   // Check if current user is super admin
-  const isSuperAdmin = user?.email === adminConfig.superAdminEmail;
+  const isSuperAdmin = user?.email && adminConfig.superAdminEmails.includes(user.email);
 
   const value = {
     user,
