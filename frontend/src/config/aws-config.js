@@ -18,8 +18,9 @@ export const adminConfig = {
   // Users with admin access (can view all users, stats, view-as-user)
   adminEmails: [
     'henryoverbeeke@gmail.com',
-    'sarahcarter@gmail.com'
+    'sarahcarter@gmail.com',
+    'claireoverbeeke@gmail.com'
   ],
-  // Super admin (can disable users, platform lockdown)
+  // Super admin (can disable users, platform lockdown, password changes)
   superAdminEmail: 'henryoverbeeke@gmail.com'
 };
