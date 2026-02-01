@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::cartercare-progress-photos-584973764297/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-2:584973764297:table/CarterCare_Workouts",
+        "arn:aws:dynamodb:us-east-2:584973764297:table/CarterCare_Meals",
+        "arn:aws:dynamodb:us-east-2:584973764297:table/CarterCare_Progress"
+      ]
+    }
+  ]
+}
