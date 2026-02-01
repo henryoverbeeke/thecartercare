@@ -1,10 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
 import { motion } from 'framer-motion';
-import { Home, Dumbbell, Utensils, Camera, LogOut, User, Heart } from 'lucide-react';
+import { Home, Dumbbell, Utensils, Camera, LogOut, User, Heart, Shield, Eye, EyeOff, Crown } from 'lucide-react';
 
 export default function Layout({ children }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin, isSuperAdmin } = useAuth();
+  const { viewAsUser, stopViewingAs, isViewingAsUser } = useAdmin();
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -14,6 +16,25 @@ export default function Layout({ children }) {
 
   return (
     <div className="app">
+      {/* View As User Banner */}
+      {isViewingAsUser && (
+        <motion.div
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="view-as-banner"
+        >
+          <div className="view-as-content">
+            <Eye size={18} />
+            <span>Viewing as: <strong>{viewAsUser.name || viewAsUser.email}</strong></span>
+            <span className="view-as-note">(Read-only view - no changes will be made)</span>
+          </div>
+          <button onClick={stopViewingAs} className="btn-exit-view">
+            <EyeOff size={16} />
+            Exit View Mode
+          </button>
+        </motion.div>
+      )}
+
       <nav className="app-nav">
         <motion.div
           className="nav-logo"
@@ -54,6 +75,14 @@ export default function Layout({ children }) {
               Progress
             </NavLink>
           </li>
+          {isAdmin && (
+            <li>
+              <NavLink to="/admin" className={({ isActive }) => `nav-link admin-link ${isSuperAdmin ? 'developer-link' : ''} ${isActive ? 'active' : ''}`}>
+                {isSuperAdmin ? <Crown size={18} color="#ef4444" /> : <Shield size={18} />}
+                Admin
+              </NavLink>
+            </li>
+          )}
         </motion.ul>
 
         <motion.div
@@ -65,6 +94,11 @@ export default function Layout({ children }) {
           <span className="nav-user-name">
             <User size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
             {user?.name || user?.email}
+            {isAdmin && (
+              <span className={`admin-badge ${isSuperAdmin ? 'developer' : ''}`}>
+                {isSuperAdmin ? 'Developer' : 'Admin'}
+              </span>
+            )}
           </span>
           <button onClick={handleSignOut} className="btn-signout">
             <LogOut size={16} />

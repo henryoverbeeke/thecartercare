@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import Toast from '../components/Toast';
-import { Mail, Lock, User, Heart, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Heart, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -12,8 +12,13 @@ export default function Login() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, authError, clearAuthError } = useAuth();
   const navigate = useNavigate();
+
+  // Clear auth error when component mounts or when switching tabs
+  useEffect(() => {
+    clearAuthError();
+  }, [isSignUp]);
 
   const showToast = (message, type) => {
     setToast({ message, type, visible: true });
@@ -81,6 +86,13 @@ export default function Login() {
               Sign Up
             </button>
           </div>
+
+          {authError && (
+            <div className="auth-error">
+              <AlertTriangle size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+              {authError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {isSignUp && (

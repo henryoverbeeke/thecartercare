@@ -14,6 +14,7 @@ import {
   Filler,
 } from 'chart.js';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
 import { initDynamoDB, getWorkouts, getMeals, getProgress } from '../services/dynamodb';
 import { initS3 } from '../services/s3';
 import { format, subDays, startOfDay, isAfter } from 'date-fns';
@@ -99,6 +100,7 @@ const motivationalFacts = [
 
 export default function Dashboard() {
   const { user, credentials } = useAuth();
+  const { viewAsUser, isViewingAsUser } = useAdmin();
   const [workouts, setWorkouts] = useState([]);
   const [meals, setMeals] = useState([]);
   const [progress, setProgress] = useState([]);
@@ -107,6 +109,9 @@ export default function Dashboard() {
     motivationalFacts[Math.floor(Math.random() * motivationalFacts.length)]
   );
   const [dailyDoctorFact] = useState(() => getDailyDoctorFact());
+
+  // Use viewed user's ID if in view-as mode, otherwise use current user
+  const activeUserId = isViewingAsUser ? viewAsUser.cognitoId : user.sub;
 
   const getNewFact = () => {
     let newFact;
@@ -122,14 +127,15 @@ export default function Dashboard() {
       initS3(credentials);
       loadData();
     }
-  }, [credentials]);
+  }, [credentials, activeUserId]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const [workoutData, mealData, progressData] = await Promise.all([
-        getWorkouts(user.sub),
-        getMeals(user.sub),
-        getProgress(user.sub),
+        getWorkouts(activeUserId),
+        getMeals(activeUserId),
+        getProgress(activeUserId),
       ]);
       setWorkouts(workoutData);
       setMeals(mealData);

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AdminProvider } from './contexts/AdminContext';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -7,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Workouts from './pages/Workouts';
 import Nutrition from './pages/Nutrition';
 import Progress from './pages/Progress';
+import AdminPanel from './pages/AdminPanel';
 import './styles/theme.css';
 
 function LoadingSpinner() {
@@ -32,6 +34,24 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" />;
+  }
+
+  return <Layout>{children}</Layout>;
+}
+
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />;
   }
 
   return <Layout>{children}</Layout>;
@@ -102,6 +122,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPanel />
+          </AdminRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
@@ -111,7 +139,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <AdminProvider>
+          <AppRoutes />
+        </AdminProvider>
       </AuthProvider>
     </BrowserRouter>
   );

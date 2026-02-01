@@ -1,0 +1,37 @@
+import { createContext, useContext, useState } from 'react';
+
+const AdminContext = createContext(null);
+
+export function AdminProvider({ children }) {
+  // View-as-user state: when set, admin views the app as this user
+  const [viewAsUser, setViewAsUser] = useState(null);
+
+  const startViewingAs = (userData) => {
+    setViewAsUser({
+      email: userData.email,
+      cognitoId: userData.cognitoId,
+      name: userData.name,
+    });
+  };
+
+  const stopViewingAs = () => {
+    setViewAsUser(null);
+  };
+
+  const value = {
+    viewAsUser,
+    startViewingAs,
+    stopViewingAs,
+    isViewingAsUser: !!viewAsUser,
+  };
+
+  return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
+}
+
+export function useAdmin() {
+  const context = useContext(AdminContext);
+  if (!context) {
+    throw new Error('useAdmin must be used within an AdminProvider');
+  }
+  return context;
+}

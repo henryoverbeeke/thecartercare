@@ -7,6 +7,19 @@ export const awsConfig = {
   dynamoTables: {
     workouts: 'CarterCare_Workouts',
     meals: 'CarterCare_Meals',
-    progress: 'CarterCare_Progress'
+    progress: 'CarterCare_Progress',
+    users: 'CarterCare_Users',
+    platform: 'CarterCare_Platform'
   }
+};
+
+// Admin configuration
+export const adminConfig = {
+  // Users with admin access (can view all users, stats, view-as-user)
+  adminEmails: [
+    'henryoverbeeke@gmail.com',
+    'sarahcarter@gmail.com'
+  ],
+  // Super admin (can disable users, platform lockdown)
+  superAdminEmail: 'henryoverbeeke@gmail.com'
 };

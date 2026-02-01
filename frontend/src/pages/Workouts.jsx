@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
 import { initDynamoDB, getWorkouts, addWorkout, deleteWorkout } from '../services/dynamodb';
 import Modal from '../components/Modal';
 import Toast from '../components/Toast';
@@ -20,11 +21,15 @@ const workoutTypes = [
 
 export default function Workouts() {
   const { user, credentials } = useAuth();
+  const { viewAsUser, isViewingAsUser } = useAdmin();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
   const [exercises, setExercises] = useState([{ name: '', sets: '', reps: '', weight: '' }]);
+
+  // Use viewed user's ID if in view-as mode, otherwise use current user
+  const activeUserId = isViewingAsUser ? viewAsUser.cognitoId : user.sub;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,11 +45,12 @@ export default function Workouts() {
       initDynamoDB(credentials);
       loadWorkouts();
     }
-  }, [credentials]);
+  }, [credentials, activeUserId]);
 
   const loadWorkouts = async () => {
+    setLoading(true);
     try {
-      const data = await getWorkouts(user.sub);
+      const data = await getWorkouts(activeUserId);
       setWorkouts(data);
     } catch (error) {
       showToast('Error loading workouts', 'error');
@@ -142,15 +148,17 @@ export default function Workouts() {
             Track your training sessions
           </p>
         </div>
-        <motion.button
-          className="retro-button"
-          onClick={() => setModalOpen(true)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-          Add Workout
-        </motion.button>
+        {!isViewingAsUser && (
+          <motion.button
+            className="retro-button"
+            onClick={() => setModalOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Plus size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+            Add Workout
+          </motion.button>
+        )}
       </div>
 
       {/* Stats */}
@@ -217,20 +225,22 @@ export default function Workouts() {
                     <Flame size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                     {workout.calories} cal
                   </div>
-                  <motion.button
-                    onClick={() => handleDelete(workout.workoutId)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--neon-pink)',
-                      cursor: 'pointer',
-                      padding: 8,
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Trash2 size={18} />
-                  </motion.button>
+                  {!isViewingAsUser && (
+                    <motion.button
+                      onClick={() => handleDelete(workout.workoutId)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--neon-pink)',
+                        cursor: 'pointer',
+                        padding: 8,
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Trash2 size={18} />
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             ))}

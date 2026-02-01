@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
 import { initDynamoDB, getMeals, addMeal, deleteMeal } from '../services/dynamodb';
 import Modal from '../components/Modal';
 import Toast from '../components/Toast';
@@ -17,10 +18,14 @@ const mealTypes = [
 
 export default function Nutrition() {
   const { user, credentials } = useAuth();
+  const { viewAsUser, isViewingAsUser } = useAdmin();
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
+
+  // Use viewed user's ID if in view-as mode, otherwise use current user
+  const activeUserId = isViewingAsUser ? viewAsUser.cognitoId : user.sub;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -38,11 +43,12 @@ export default function Nutrition() {
       initDynamoDB(credentials);
       loadMeals();
     }
-  }, [credentials]);
+  }, [credentials, activeUserId]);
 
   const loadMeals = async () => {
+    setLoading(true);
     try {
-      const data = await getMeals(user.sub);
+      const data = await getMeals(activeUserId);
       setMeals(data);
     } catch (error) {
       showToast('Error loading meals', 'error');
@@ -134,15 +140,17 @@ export default function Nutrition() {
             Track your meals and macros
           </p>
         </div>
-        <motion.button
-          className="retro-button"
-          onClick={() => setModalOpen(true)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-          Log Meal
-        </motion.button>
+        {!isViewingAsUser && (
+          <motion.button
+            className="retro-button"
+            onClick={() => setModalOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Plus size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+            Log Meal
+          </motion.button>
+        )}
       </div>
 
       {/* Today's Stats */}
@@ -215,20 +223,22 @@ export default function Nutrition() {
                     <Flame size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
                     {meal.calories} cal
                   </div>
-                  <motion.button
-                    onClick={() => handleDelete(meal.mealId)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--neon-pink)',
-                      cursor: 'pointer',
-                      padding: 8,
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Trash2 size={18} />
-                  </motion.button>
+                  {!isViewingAsUser && (
+                    <motion.button
+                      onClick={() => handleDelete(meal.mealId)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--neon-pink)',
+                        cursor: 'pointer',
+                        padding: 8,
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Trash2 size={18} />
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             ))}
