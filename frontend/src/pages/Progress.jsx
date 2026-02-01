@@ -312,26 +312,26 @@ export default function Progress() {
                   <Trash2 size={16} />
                 </motion.button>
               </div>
-              <div style={{ padding: 16 }}>
-                <div style={{ fontSize: 12, color: 'var(--neon-blue)', marginBottom: 8 }}>
+              <div style={{ padding: 16, background: 'var(--bg-secondary)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: 12, color: 'var(--neon-blue)', marginBottom: 8, fontWeight: 600 }}>
                   {format(new Date(entry.date), 'MMMM d, yyyy')}
                 </div>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
                   {entry.weight && (
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
-                      <Scale size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                    <span style={{ fontSize: 16, color: '#ffffff', fontWeight: 600 }}>
+                      <Scale size={14} style={{ marginRight: 4, verticalAlign: 'middle', color: 'var(--neon-pink)' }} />
                       {entry.weight} lbs
                     </span>
                   )}
                   {entry.bodyFat && (
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)' }}>
-                      <Percent size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                    <span style={{ fontSize: 16, color: '#ffffff', fontWeight: 600 }}>
+                      <Percent size={14} style={{ marginRight: 4, verticalAlign: 'middle', color: 'var(--neon-blue)' }} />
                       {entry.bodyFat}%
                     </span>
                   )}
                 </div>
                 {entry.notes && (
-                  <p style={{ marginTop: 8, fontSize: 13, color: 'rgba(255,255,255,0.9)' }}>
+                  <p style={{ marginTop: 8, fontSize: 13, color: '#ffffff', lineHeight: 1.5 }}>
                     {entry.notes}
                   </p>
                 )}
