@@ -9,6 +9,7 @@ import {
   getPlatformLockdown,
   setPlatformLockdown,
   getUserStats,
+  adminSetUserPassword,
 } from '../services/admin';
 import { initDynamoDB, getWorkouts, getMeals, getProgress } from '../services/dynamodb';
 import { format } from 'date-fns';
@@ -30,6 +31,9 @@ import {
   AlertTriangle,
   Crown,
   BarChart3,
+  Key,
+  Check,
+  X,
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -52,6 +56,10 @@ export default function AdminPanel() {
     avgCaloriesConsumed: 0,
   });
   const [actionLoading, setActionLoading] = useState(null);
+  const [passwordModal, setPasswordModal] = useState({ isOpen: false, user: null });
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     if (credentials) {
@@ -183,6 +191,63 @@ export default function AdminPanel() {
 
   const handleViewAsUser = (userData) => {
     startViewingAs(userData);
+  };
+
+  const openPasswordModal = (userData) => {
+    setPasswordModal({ isOpen: true, user: userData });
+    setNewPassword('');
+    setPasswordError('');
+    setPasswordSuccess(false);
+  };
+
+  const closePasswordModal = () => {
+    setPasswordModal({ isOpen: false, user: null });
+    setNewPassword('');
+    setPasswordError('');
+    setPasswordSuccess(false);
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    return '';
+  };
+
+  const handleChangePassword = async () => {
+    if (!isSuperAdmin || !passwordModal.user) return;
+
+    const validationError = validatePassword(newPassword);
+    if (validationError) {
+      setPasswordError(validationError);
+      return;
+    }
+
+    setActionLoading('password');
+    setPasswordError('');
+
+    try {
+      // Use cognitoId (sub) as the username for Cognito
+      await adminSetUserPassword(passwordModal.user.cognitoId, newPassword);
+      setPasswordSuccess(true);
+      setTimeout(() => {
+        closePasswordModal();
+      }, 2000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordError(error.message || 'Failed to change password. Check IAM permissions.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const containerVariants = {
@@ -407,26 +472,36 @@ export default function AdminPanel() {
                     View As
                   </button>
                   {isSuperAdmin && u.email !== user.email && (
-                    <button
-                      onClick={() => handleToggleUserStatus(u.email, u.isDisabled)}
-                      disabled={actionLoading === u.email}
-                      className={`btn-admin-action ${u.isDisabled ? 'enable' : 'disable'}`}
-                      title={u.isDisabled ? 'Enable User' : 'Disable User'}
-                    >
-                      {actionLoading === u.email ? (
-                        <div className="spinner-small" />
-                      ) : u.isDisabled ? (
-                        <>
-                          <UserCheck size={16} />
-                          Enable
-                        </>
-                      ) : (
-                        <>
-                          <UserX size={16} />
-                          Disable
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => openPasswordModal(u)}
+                        className="btn-admin-action password"
+                        title="Change Password"
+                      >
+                        <Key size={16} />
+                        Password
+                      </button>
+                      <button
+                        onClick={() => handleToggleUserStatus(u.email, u.isDisabled)}
+                        disabled={actionLoading === u.email}
+                        className={`btn-admin-action ${u.isDisabled ? 'enable' : 'disable'}`}
+                        title={u.isDisabled ? 'Enable User' : 'Disable User'}
+                      >
+                        {actionLoading === u.email ? (
+                          <div className="spinner-small" />
+                        ) : u.isDisabled ? (
+                          <>
+                            <UserCheck size={16} />
+                            Enable
+                          </>
+                        ) : (
+                          <>
+                            <UserX size={16} />
+                            Disable
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -549,6 +624,101 @@ export default function AdminPanel() {
                 </>
               ) : (
                 <p>Error loading stats</p>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Password Change Modal */}
+      {passwordModal.isOpen && passwordModal.user && (
+        <div className="admin-modal-overlay" onClick={closePasswordModal}>
+          <motion.div
+            className="admin-modal password-modal"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="admin-modal-header password-header">
+              <h3>
+                <Key size={20} color="#ef4444" />
+                Change Password
+              </h3>
+              <button onClick={closePasswordModal} className="btn-close">×</button>
+            </div>
+            <div className="admin-modal-body">
+              {passwordSuccess ? (
+                <div className="password-success">
+                  <Check size={48} color="#22c55e" />
+                  <h4>Password Changed Successfully!</h4>
+                  <p>The password for {passwordModal.user.name || passwordModal.user.email} has been updated.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="password-user-info">
+                    <div className="admin-user-avatar">
+                      {passwordModal.user.name
+                        ? passwordModal.user.name.charAt(0).toUpperCase()
+                        : passwordModal.user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="password-user-name">{passwordModal.user.name || 'No name'}</div>
+                      <div className="password-user-email">{passwordModal.user.email}</div>
+                    </div>
+                  </div>
+
+                  <div className="password-form">
+                    <label className="form-label">
+                      <Lock size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      className="form-input"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        setPasswordError('');
+                      }}
+                      placeholder="Enter new password"
+                      autoFocus
+                    />
+                    <p className="password-hint">
+                      Password must be at least 8 characters with uppercase, lowercase, and numbers
+                    </p>
+
+                    {passwordError && (
+                      <div className="password-error">
+                        <AlertTriangle size={14} />
+                        {passwordError}
+                      </div>
+                    )}
+
+                    <div className="password-actions">
+                      <button
+                        onClick={closePasswordModal}
+                        className="btn-cancel"
+                      >
+                        <X size={16} />
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleChangePassword}
+                        disabled={actionLoading === 'password' || !newPassword}
+                        className="btn-change-password"
+                      >
+                        {actionLoading === 'password' ? (
+                          <div className="spinner-small" />
+                        ) : (
+                          <>
+                            <Key size={16} />
+                            Change Password
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </motion.div>

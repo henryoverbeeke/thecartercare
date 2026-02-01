@@ -6,9 +6,14 @@ import {
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+import {
+  CognitoIdentityProviderClient,
+  AdminSetUserPasswordCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { awsConfig } from '../config/aws-config';
 
 let docClient = null;
+let cognitoClient = null;
 
 export const initAdminDB = (credentials) => {
   const client = new DynamoDBClient({
@@ -16,6 +21,12 @@ export const initAdminDB = (credentials) => {
     credentials: credentials,
   });
   docClient = DynamoDBDocumentClient.from(client);
+
+  // Initialize Cognito client for admin operations
+  cognitoClient = new CognitoIdentityProviderClient({
+    region: awsConfig.region,
+    credentials: credentials,
+  });
 };
 
 // User operations
@@ -131,4 +142,20 @@ export const getPlatformStats = async () => {
     activeUsers: activeUsers.length,
     disabledUsers: users.length - activeUsers.length,
   };
+};
+
+// Admin password change (Super Admin only)
+export const adminSetUserPassword = async (username, newPassword) => {
+  if (!cognitoClient) {
+    throw new Error('Admin client not initialized');
+  }
+
+  const command = new AdminSetUserPasswordCommand({
+    UserPoolId: awsConfig.userPoolId,
+    Username: username,
+    Password: newPassword,
+    Permanent: true, // Set as permanent password (no force change on next login)
+  });
+
+  return cognitoClient.send(command);
 };
