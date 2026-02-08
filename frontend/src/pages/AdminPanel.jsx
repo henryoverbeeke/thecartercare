@@ -136,15 +136,22 @@ export default function AdminPanel() {
   };
 
   const handleToggleLockdown = async () => {
-    if (!effectiveIsDeveloper) return;
+    console.log('handleToggleLockdown called', { effectiveIsDeveloper, isDeveloper, devViewMode });
+    if (!effectiveIsDeveloper) {
+      alert('Only Developer mode can control platform lockdown. Press Y 3 times to enter Developer mode.');
+      return;
+    }
 
     setActionLoading('lockdown');
     try {
       const newState = !lockdownEnabled;
+      console.log('Toggling lockdown to:', newState);
       await setPlatformLockdown(newState, user.email);
       setLockdownEnabled(newState);
+      alert(`Platform lockdown ${newState ? 'enabled' : 'disabled'} successfully!`);
     } catch (error) {
       console.error('Error toggling lockdown:', error);
+      alert('Error toggling lockdown: ' + (error.message || 'Unknown error'));
     } finally {
       setActionLoading(null);
     }
@@ -153,14 +160,22 @@ export default function AdminPanel() {
   const handleToggleUserStatus = async (userEmail, currentStatus) => {
     if (!effectiveIsDeveloper) return; // Only developer can disable accounts
 
+    // Prevent disabling the developer account
+    if (userEmail === user.email) {
+      alert('You cannot disable your own developer account!');
+      return;
+    }
+
     setActionLoading(userEmail);
     try {
       await updateUserDisabledStatus(userEmail, !currentStatus);
       setUsers(users.map(u =>
         u.email === userEmail ? { ...u, isDisabled: !currentStatus } : u
       ));
+      alert(`User ${currentStatus ? 'enabled' : 'disabled'} successfully!`);
     } catch (error) {
       console.error('Error toggling user status:', error);
+      alert('Error toggling user status: ' + (error.message || 'Unknown error'));
     } finally {
       setActionLoading(null);
     }

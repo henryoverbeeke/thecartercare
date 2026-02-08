@@ -63,6 +63,11 @@ export const getAllUsers = async () => {
 };
 
 export const updateUserDisabledStatus = async (email, isDisabled) => {
+  // Prevent disabling the developer account
+  if (email === adminConfig.developerEmail) {
+    throw new Error('Cannot disable the developer account');
+  }
+
   const command = new UpdateCommand({
     TableName: awsConfig.dynamoTables.users,
     Key: { email },
