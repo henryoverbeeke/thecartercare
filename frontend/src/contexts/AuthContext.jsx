@@ -8,7 +8,7 @@ import {
 import { CognitoIdentityClient } from '@aws-sdk/client-cognito-identity';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
 import { awsConfig, adminConfig } from '../config/aws-config';
-import { initAdminDB, saveUser, getUser, getPlatformLockdown, getAdminUsers } from '../services/admin';
+import { initAdminDB, saveUser, getUser, getPlatformLockdown, getAdminUsers, getSuperUsers } from '../services/admin';
 
 const userPool = new CognitoUserPool({
   UserPoolId: awsConfig.userPoolId,
@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState(null);
   const [isLockdown, setIsLockdown] = useState(false);
   const [adminEmails, setAdminEmails] = useState([]);
+  const [superUserEmails, setSuperUserEmails] = useState([]);
 
   useEffect(() => {
     checkAuth();
@@ -58,12 +59,16 @@ export function AuthProvider({ children }) {
               const email = userData.email;
               const isDeveloper = email === adminConfig.developerEmail;
 
-              // Load admin users from DynamoDB
+              // Load admin and superuser lists from DynamoDB
               try {
-                const admins = await getAdminUsers();
+                const [admins, superUsers] = await Promise.all([
+                  getAdminUsers(),
+                  getSuperUsers()
+                ]);
                 setAdminEmails(admins);
+                setSuperUserEmails(superUsers);
               } catch (e) {
-                console.error('Error loading admin users:', e);
+                console.error('Error loading admin/superuser lists:', e);
               }
 
               // Check platform lockdown
@@ -197,12 +202,16 @@ export function AuthProvider({ children }) {
 
               const isDeveloper = email === adminConfig.developerEmail;
 
-              // Load admin users from DynamoDB
+              // Load admin and superuser lists from DynamoDB
               try {
-                const admins = await getAdminUsers();
+                const [admins, superUsers] = await Promise.all([
+                  getAdminUsers(),
+                  getSuperUsers()
+                ]);
                 setAdminEmails(admins);
+                setSuperUserEmails(superUsers);
               } catch (e) {
-                console.error('Error loading admin users:', e);
+                console.error('Error loading admin/superuser lists:', e);
               }
 
               // Check platform lockdown
@@ -278,7 +287,10 @@ export function AuthProvider({ children }) {
   };
 
   // Check if current user is admin (loaded from DynamoDB)
-  const isAdmin = user?.email && (adminEmails.includes(user.email) || user.email === adminConfig.developerEmail);
+  const isAdmin = user?.email && (adminEmails.includes(user.email) || superUserEmails.includes(user.email) || user.email === adminConfig.developerEmail);
+
+  // Check if current user is superuser (loaded from DynamoDB or is developer)
+  const isSuperUser = user?.email && (superUserEmails.includes(user.email) || user.email === adminConfig.developerEmail);
 
   // Check if current user is developer (only henryoverbeeke@gmail.com)
   const isDeveloper = user?.email === adminConfig.developerEmail;
@@ -294,16 +306,26 @@ export function AuthProvider({ children }) {
     authError,
     clearAuthError,
     isAdmin,
+    isSuperUser,
     isSuperAdmin: isDeveloper, // Keep for backwards compatibility
     isDeveloper,
     isLockdown,
     adminEmails,
+    superUserEmails,
     refreshAdminList: async () => {
       try {
         const admins = await getAdminUsers();
         setAdminEmails(admins);
       } catch (e) {
         console.error('Error refreshing admin list:', e);
+      }
+    },
+    refreshSuperUserList: async () => {
+      try {
+        const superUsers = await getSuperUsers();
+        setSuperUserEmails(superUsers);
+      } catch (e) {
+        console.error('Error refreshing superuser list:', e);
       }
     },
   };

@@ -15,6 +15,6 @@ export const awsConfig = {
 
 // Admin configuration
 export const adminConfig = {
-  // Only the developer can manage admins and has full access
+  // Only the developer can manage everything (but can act as superuser)
   developerEmail: 'henryoverbeeke@gmail.com'
 };

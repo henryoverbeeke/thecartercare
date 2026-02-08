@@ -40,11 +40,14 @@ import {
 } from 'lucide-react';
 
 export default function AdminPanel() {
-  const { user, credentials, isDeveloper, adminEmails, refreshAdminList } = useAuth();
+  const { user, credentials, isDeveloper, isSuperUser, adminEmails, superUserEmails, refreshAdminList, refreshSuperUserList } = useAuth();
   const { startViewingAs, viewAsUser, stopViewingAs, isViewingAsUser, devViewMode } = useAdmin();
 
-  // Determine effective developer status based on view mode
+  // Determine effective permissions based on view mode
   const effectiveIsDeveloper = isDeveloper && devViewMode === 'developer';
+  const effectiveIsSuperUser = isDeveloper 
+    ? (devViewMode === 'developer' || devViewMode === 'superuser')
+    : isSuperUser;
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +151,7 @@ export default function AdminPanel() {
   };
 
   const handleToggleUserStatus = async (userEmail, currentStatus) => {
-    if (!effectiveIsDeveloper) return;
+    if (!effectiveIsDeveloper) return; // Only developer can disable accounts
 
     setActionLoading(userEmail);
     try {
@@ -236,7 +239,7 @@ export default function AdminPanel() {
   };
 
   const handleChangePassword = async () => {
-    if (!effectiveIsDeveloper || !passwordModal.user) return;
+    if (!effectiveIsSuperUser || !passwordModal.user) return;
 
     const validationError = validatePassword(newPassword);
     if (validationError) {
@@ -264,7 +267,7 @@ export default function AdminPanel() {
 
   const handleAddAdmin = async (email = null) => {
     const emailToAdd = email || newAdminEmail;
-    if (!effectiveIsDeveloper || !emailToAdd) return;
+    if (!effectiveIsSuperUser || !emailToAdd) return;
 
     // Prevent adding developer email
     if (emailToAdd === user.email) {
@@ -300,7 +303,7 @@ export default function AdminPanel() {
   };
 
   const handleRemoveAdmin = async (email) => {
-    if (!effectiveIsDeveloper || email === user.email) return;
+    if (!effectiveIsSuperUser || email === user.email) return;
 
     // Confirm removal
     if (!confirm(`Remove admin access for ${email}? They will lose access to the Admin Panel after logging in again.`)) {
@@ -363,16 +366,24 @@ export default function AdminPanel() {
 
       <motion.div className="page-header" variants={itemVariants}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Shield size={32} color={effectiveIsDeveloper ? "#ef4444" : "#d4a853"} />
+          <Shield 
+            size={32} 
+            color={effectiveIsDeveloper ? "#ef4444" : effectiveIsSuperUser ? "#a855f7" : "#d4a853"} 
+          />
           <div>
-            <h1 className="page-title" style={effectiveIsDeveloper ? { color: '#ef4444' } : {}}>
-              {effectiveIsDeveloper ? 'Developer Panel' : 'Admin Panel'}
+            <h1 className="page-title" style={effectiveIsDeveloper ? { color: '#ef4444' } : effectiveIsSuperUser ? { color: '#a855f7' } : {}}>
+              {effectiveIsDeveloper ? 'Developer Panel' : effectiveIsSuperUser ? 'SuperUser Panel' : 'Admin Panel'}
             </h1>
             <p className="page-subtitle">
               {effectiveIsDeveloper ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Crown size={14} color="#ef4444" />
                   Full Platform Access
+                </span>
+              ) : effectiveIsSuperUser ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Shield size={14} color="#a855f7" />
+                  Manage Admins & Users
                 </span>
               ) : (
                 'Admin Access'
@@ -436,158 +447,159 @@ export default function AdminPanel() {
         </div>
       </motion.div>
 
-      {/* Developer Controls */}
-      {effectiveIsDeveloper && (
-        <>
-          <motion.div variants={itemVariants} style={{ marginBottom: 32 }}>
-            <div className="admin-control-card">
-              <div className="admin-control-header">
-                <Crown size={24} color="#ef4444" />
-                <h3>Admin User Management</h3>
-              </div>
-              <div className="admin-control-body">
-                <p style={{ 
-                  fontSize: 13, 
-                  color: 'rgba(255,255,255,0.6)', 
-                  marginBottom: 16,
-                  padding: '8px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: 4,
-                  borderLeft: '3px solid var(--neon-blue)'
-                }}>
-                  ℹ️ Note: Admin changes take effect after the user logs in again
-                </p>
-                <div style={{ marginBottom: 20 }}>
-                  <h4 style={{ marginBottom: 10, fontSize: 14 }}>Current Admin Users</h4>
-                  {adminEmails.length === 0 ? (
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No admin users yet</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {adminEmails.map((email) => (
-                        <div
-                          key={email}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '8px 12px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: 4,
-                            border: '1px solid rgba(255,255,255,0.1)',
-                          }}
-                        >
-                          <span style={{ fontSize: 14 }}>{email}</span>
-                          {email !== user.email && (
-                            <button
-                              onClick={() => handleRemoveAdmin(email)}
-                              disabled={adminActionLoading}
-                              style={{
-                                background: 'transparent',
-                                border: '1px solid var(--neon-pink)',
-                                color: 'var(--neon-pink)',
-                                padding: '4px 12px',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                              }}
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <h4 style={{ marginBottom: 10, fontSize: 14 }}>Add New Admin</h4>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      type="email"
-                      value={newAdminEmail}
-                      onChange={(e) => {
-                        setNewAdminEmail(e.target.value);
-                        setAdminActionError('');
-                      }}
-                      placeholder="user@example.com"
-                      className="retro-input"
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      onClick={handleAddAdmin}
-                      disabled={adminActionLoading || !newAdminEmail}
-                      className="retro-button"
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      {adminActionLoading ? 'Adding...' : 'Add Admin'}
-                    </button>
-                  </div>
-                  {adminActionError && (
-                    <p style={{ color: 'var(--neon-pink)', fontSize: 12, marginTop: 8 }}>
-                      {adminActionError}
-                    </p>
-                  )}
-                </div>
-              </div>
+      {/* SuperUser Controls - Admin & Password Management */}
+      {effectiveIsSuperUser && (
+        <motion.div variants={itemVariants} style={{ marginBottom: 32 }}>
+          <div className="admin-control-card">
+            <div className="admin-control-header">
+              <Shield size={24} color="#a855f7" />
+              <h3>Admin User Management</h3>
             </div>
-          </motion.div>
-
-          <motion.div variants={itemVariants} style={{ marginBottom: 32 }}>
-            <div className="admin-control-card">
-              <div className="admin-control-header">
-                <ShieldAlert size={24} color="#ef4444" />
-                <h3>Platform Management</h3>
-              </div>
-              <div className="admin-control-body">
-                <div className="lockdown-control">
-                  <div className="lockdown-info">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {lockdownEnabled ? (
-                        <Lock size={20} color="#ef4444" />
-                      ) : (
-                        <Unlock size={20} color="#22c55e" />
-                      )}
-                      <div>
-                        <h4>Platform Lockdown</h4>
-                        <p>
-                          {lockdownEnabled
-                            ? 'Platform is in lockdown. Only you can access it.'
-                            : 'Platform is accessible to all users.'}
-                        </p>
+            <div className="admin-control-body">
+              <p style={{ 
+                fontSize: 13, 
+                color: 'rgba(255,255,255,0.6)', 
+                marginBottom: 16,
+                padding: '8px 12px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: 4,
+                borderLeft: '3px solid var(--neon-blue)'
+              }}>
+                ℹ️ Note: Admin changes take effect after the user logs in again
+              </p>
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ marginBottom: 10, fontSize: 14 }}>Current Admin Users</h4>
+                {adminEmails.length === 0 ? (
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No admin users yet</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {adminEmails.map((email) => (
+                      <div
+                        key={email}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '8px 12px',
+                          background: 'rgba(255,255,255,0.05)',
+                          borderRadius: 4,
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }}
+                      >
+                        <span style={{ fontSize: 14 }}>{email}</span>
+                        {email !== user.email && (
+                          <button
+                            onClick={() => handleRemoveAdmin(email)}
+                            disabled={adminActionLoading}
+                            style={{
+                              background: 'transparent',
+                              border: '1px solid var(--neon-pink)',
+                              color: 'var(--neon-pink)',
+                              padding: '4px 12px',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleToggleLockdown}
-                    disabled={actionLoading === 'lockdown'}
-                    className={`lockdown-toggle ${lockdownEnabled ? 'active' : ''}`}
-                  >
-                    {actionLoading === 'lockdown' ? (
-                      <div className="spinner-small" />
-                    ) : lockdownEnabled ? (
-                      <>
-                        <Unlock size={16} />
-                        Disable Lockdown
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={16} />
-                        Enable Lockdown
-                      </>
-                    )}
-                  </button>
-                </div>
-                {lockdownEnabled && (
-                  <div className="lockdown-warning">
-                    <AlertTriangle size={16} />
-                    <span>Warning: All users except you are currently locked out of the platform.</span>
+                    ))}
                   </div>
                 )}
               </div>
+
+              <div>
+                <h4 style={{ marginBottom: 10, fontSize: 14 }}>Add New Admin</h4>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="email"
+                    value={newAdminEmail}
+                    onChange={(e) => {
+                      setNewAdminEmail(e.target.value);
+                      setAdminActionError('');
+                    }}
+                    placeholder="user@example.com"
+                    className="retro-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    onClick={handleAddAdmin}
+                    disabled={adminActionLoading || !newAdminEmail}
+                    className="retro-button"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {adminActionLoading ? 'Adding...' : 'Add Admin'}
+                  </button>
+                </div>
+                {adminActionError && (
+                  <p style={{ color: 'var(--neon-pink)', fontSize: 12, marginTop: 8 }}>
+                    {adminActionError}
+                  </p>
+                )}
+              </div>
             </div>
-          </motion.div>
-        </>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Developer Only Controls - Platform Management */}
+      {effectiveIsDeveloper && (
+        <motion.div variants={itemVariants} style={{ marginBottom: 32 }}>
+          <div className="admin-control-card">
+            <div className="admin-control-header">
+              <ShieldAlert size={24} color="#ef4444" />
+              <h3>Platform Management</h3>
+            </div>
+            <div className="admin-control-body">
+              <div className="lockdown-control">
+                <div className="lockdown-info">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {lockdownEnabled ? (
+                      <Lock size={20} color="#ef4444" />
+                    ) : (
+                      <Unlock size={20} color="#22c55e" />
+                    )}
+                    <div>
+                      <h4>Platform Lockdown</h4>
+                      <p>
+                        {lockdownEnabled
+                          ? 'Platform is in lockdown. Only you can access it.'
+                          : 'Platform is accessible to all users.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleToggleLockdown}
+                  disabled={actionLoading === 'lockdown'}
+                  className={`lockdown-toggle ${lockdownEnabled ? 'active' : ''}`}
+                >
+                  {actionLoading === 'lockdown' ? (
+                    <div className="spinner-small" />
+                  ) : lockdownEnabled ? (
+                    <>
+                      <Unlock size={16} />
+                      Disable Lockdown
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={16} />
+                      Enable Lockdown
+                    </>
+                  )}
+                </button>
+              </div>
+              {lockdownEnabled && (
+                <div className="lockdown-warning">
+                  <AlertTriangle size={16} />
+                  <span>Warning: All users except you are currently locked out of the platform.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {/* User List */}
@@ -614,8 +626,10 @@ export default function AdminPanel() {
                       {u.isDisabled && (
                         <span className="disabled-badge">Disabled</span>
                       )}
-                      {u.email === user.email && effectiveIsDeveloper && (
-                        <span className="admin-badge developer" style={{ marginLeft: 8, background: '#ef4444' }}>Developer</span>
+                      {u.email === user.email && effectiveIsSuperUser && (
+                        <span className="admin-badge" style={{ marginLeft: 8, background: effectiveIsDeveloper ? '#ef4444' : '#a855f7' }}>
+                          {effectiveIsDeveloper ? 'Developer' : 'SuperUser'}
+                        </span>
                       )}
                       {adminEmails.includes(u.email) && u.email !== user.email && (
                         <span className="admin-badge" style={{ marginLeft: 8 }}>Admin</span>
@@ -645,7 +659,7 @@ export default function AdminPanel() {
                     <Eye size={16} />
                     View As
                   </button>
-                  {effectiveIsDeveloper && u.email !== user.email && (
+                  {effectiveIsSuperUser && u.email !== user.email && (
                     <>
                       {adminEmails.includes(u.email) ? (
                         <button

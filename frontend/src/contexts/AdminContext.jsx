@@ -6,8 +6,8 @@ export function AdminProvider({ children }) {
   // View-as-user state: when set, admin views the app as this user
   const [viewAsUser, setViewAsUser] = useState(null);
   
-  // Developer view mode: controls what the developer sees
-  const [devViewMode, setDevViewMode] = useState('developer'); // 'developer', 'admin', 'user'
+  // Developer view mode: controls what the developer sees ('developer', 'superuser', 'admin', 'user')
+  const [devViewMode, setDevViewMode] = useState('superuser'); // Default to superuser
 
   const startViewingAs = (userData) => {
     setViewAsUser({

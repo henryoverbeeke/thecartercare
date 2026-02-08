@@ -170,6 +170,62 @@ export const getAdminUsers = async () => {
   return response.Item?.adminEmails || [];
 };
 
+// SuperUser management operations
+export const getSuperUsers = async () => {
+  const command = new GetCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Key: { settingId: 'superusers' },
+  });
+  const response = await docClient.send(command);
+  return response.Item?.superUserEmails || [];
+};
+
+export const addSuperUser = async (email, addedBy) => {
+  // Prevent adding the developer email
+  if (email === adminConfig.developerEmail) {
+    throw new Error('Developer account cannot be added to superuser list');
+  }
+
+  const currentSuperUsers = await getSuperUsers();
+  if (currentSuperUsers.includes(email)) {
+    throw new Error('User is already a superuser');
+  }
+
+  const updatedSuperUsers = [...currentSuperUsers, email];
+  const command = new PutCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Item: {
+      settingId: 'superusers',
+      superUserEmails: updatedSuperUsers,
+      updatedAt: new Date().toISOString(),
+      updatedBy: addedBy,
+    },
+  });
+  await docClient.send(command);
+  return updatedSuperUsers;
+};
+
+export const removeSuperUser = async (email, removedBy) => {
+  if (email === adminConfig.developerEmail) {
+    throw new Error('Cannot remove developer privileges');
+  }
+
+  const currentSuperUsers = await getSuperUsers();
+  const updatedSuperUsers = currentSuperUsers.filter(e => e !== email);
+
+  const command = new PutCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Item: {
+      settingId: 'superusers',
+      superUserEmails: updatedSuperUsers,
+      updatedAt: new Date().toISOString(),
+      updatedBy: removedBy,
+    },
+  });
+  await docClient.send(command);
+  return updatedSuperUsers;
+};
+
 export const addAdminUser = async (email, addedBy) => {
   // Prevent adding the developer email to admin list
   if (email === adminConfig.developerEmail) {

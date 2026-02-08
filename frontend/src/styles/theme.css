@@ -1443,6 +1443,25 @@ select.retro-input option {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
+.admin-badge.superuser {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+/* SuperUser-specific admin nav link */
+.nav-link.admin-link.superuser-link {
+  color: #a855f7;
+}
+
+.nav-link.admin-link.superuser-link:hover {
+  background: rgba(168, 85, 247, 0.1);
+  color: #9333ea;
+}
+
+.nav-link.admin-link.superuser-link.active {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
 /* Developer-specific admin nav link */
 .nav-link.admin-link.developer-link {
   color: #ef4444;

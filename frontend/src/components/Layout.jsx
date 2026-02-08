@@ -6,20 +6,58 @@ import { Home, Dumbbell, Utensils, Camera, LogOut, User, Heart, Shield, Eye, Eye
 import { useState, useEffect, useRef } from 'react';
 
 export default function Layout({ children }) {
-  const { user, signOut, isAdmin, isDeveloper, adminEmails } = useAuth();
+  const { user, signOut, isAdmin, isDeveloper, isSuperUser, adminEmails } = useAuth();
   const { viewAsUser, stopViewingAs, isViewingAsUser, devViewMode, setDevViewMode } = useAdmin();
   const navigate = useNavigate();
   
   // Secret developer mode toggle
   const [zPressCount, setZPressCount] = useState(0);
+  const [yPressCount, setYPressCount] = useState(0);
   const [showModeNotification, setShowModeNotification] = useState(false);
   const [modeNotificationText, setModeNotificationText] = useState('');
   const zTimeoutRef = useRef(null);
+  const yTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!isDeveloper) return;
 
     const handleKeyPress = (e) => {
+      // Y key: Toggle between SuperUser and Developer
+      if (e.key.toLowerCase() === 'y') {
+        setYPressCount(prev => {
+          const newCount = prev + 1;
+          
+          if (yTimeoutRef.current) {
+            clearTimeout(yTimeoutRef.current);
+          }
+          
+          if (newCount === 3) {
+            // Toggle between superuser and developer
+            if (devViewMode === 'superuser') {
+              setDevViewMode('developer');
+              setModeNotificationText('👑 Developer Mode Activated');
+              setShowModeNotification(true);
+              setTimeout(() => setShowModeNotification(false), 3000);
+              console.log('👑 Switched to Developer Mode');
+            } else {
+              setDevViewMode('superuser');
+              setModeNotificationText('🛡️ SuperUser Mode Activated');
+              setShowModeNotification(true);
+              setTimeout(() => setShowModeNotification(false), 3000);
+              console.log('🛡️ Switched to SuperUser Mode');
+            }
+            return 0; // Reset
+          }
+          
+          yTimeoutRef.current = setTimeout(() => {
+            setYPressCount(0);
+          }, 2000);
+          
+          return newCount;
+        });
+      }
+      
+      // Z key: View as different user types
       if (e.key.toLowerCase() === 'z') {
         setZPressCount(prev => {
           const newCount = prev + 1;
@@ -43,11 +81,11 @@ export default function Layout({ children }) {
             setTimeout(() => setShowModeNotification(false), 3000);
             console.log('🔧 Developer viewing as: Regular User');
           } else if (newCount >= 7) {
-            setDevViewMode('developer');
-            setModeNotificationText('🔧 Back to Developer Mode');
+            setDevViewMode('superuser');
+            setModeNotificationText('🔧 Back to SuperUser Mode');
             setShowModeNotification(true);
             setTimeout(() => setShowModeNotification(false), 3000);
-            console.log('🔧 Developer viewing as: Developer (normal)');
+            console.log('🔧 Developer viewing as: SuperUser (default)');
             return 0; // Reset count
           }
           
@@ -67,18 +105,25 @@ export default function Layout({ children }) {
       if (zTimeoutRef.current) {
         clearTimeout(zTimeoutRef.current);
       }
+      if (yTimeoutRef.current) {
+        clearTimeout(yTimeoutRef.current);
+      }
     };
   }, [isDeveloper, setDevViewMode]);
 
   // Determine what to show based on view mode
   const effectiveIsAdmin = isDeveloper 
-    ? (devViewMode === 'developer' || devViewMode === 'admin')
+    ? (devViewMode === 'developer' || devViewMode === 'superuser' || devViewMode === 'admin')
     : isAdmin;
+  
+  const effectiveIsSuperUser = isDeveloper
+    ? (devViewMode === 'developer' || devViewMode === 'superuser')
+    : isSuperUser;
   
   const effectiveIsDeveloper = isDeveloper && devViewMode === 'developer';
   
   const showAdminLink = isDeveloper 
-    ? (devViewMode === 'developer' || devViewMode === 'admin')
+    ? (devViewMode === 'developer' || devViewMode === 'superuser' || devViewMode === 'admin')
     : isAdmin;
 
   const handleSignOut = () => {
@@ -102,6 +147,8 @@ export default function Layout({ children }) {
               ? 'linear-gradient(135deg, #d4a853, #f5d98b)' 
               : devViewMode === 'user'
               ? 'linear-gradient(135deg, #3b82f6, #60a5fa)'
+              : devViewMode === 'superuser'
+              ? 'linear-gradient(135deg, #a855f7, #c084fc)'
               : 'linear-gradient(135deg, #ef4444, #f87171)',
             color: '#000',
             padding: '12px 20px',
@@ -178,8 +225,8 @@ export default function Layout({ children }) {
           </li>
           {showAdminLink && (
             <li>
-              <NavLink to="/admin" className={({ isActive }) => `nav-link admin-link ${effectiveIsDeveloper ? 'developer-link' : ''} ${isActive ? 'active' : ''}`}>
-                {effectiveIsDeveloper ? <Crown size={18} color="#ef4444" /> : <Shield size={18} />}
+              <NavLink to="/admin" className={({ isActive }) => `nav-link admin-link ${effectiveIsDeveloper ? 'developer-link' : effectiveIsSuperUser ? 'superuser-link' : ''} ${isActive ? 'active' : ''}`}>
+                {effectiveIsDeveloper ? <Crown size={18} color="#ef4444" /> : effectiveIsSuperUser ? <Shield size={18} color="#a855f7" /> : <Shield size={18} />}
                 Admin
               </NavLink>
             </li>
@@ -196,8 +243,8 @@ export default function Layout({ children }) {
             <User size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
             {user?.name || user?.email}
             {effectiveIsAdmin && (
-              <span className={`admin-badge ${effectiveIsDeveloper ? 'developer' : ''}`}>
-                {effectiveIsDeveloper ? 'Developer' : 'Admin'}
+              <span className={`admin-badge ${effectiveIsDeveloper ? 'developer' : effectiveIsSuperUser ? 'superuser' : ''}`}>
+                {effectiveIsDeveloper ? 'Developer' : effectiveIsSuperUser ? 'SuperUser' : 'Admin'}
               </span>
             )}
           </span>
