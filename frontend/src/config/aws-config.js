@@ -23,7 +23,6 @@ export const adminConfig = {
   ],
   // Super admins (can disable users, platform lockdown, password changes)
   superAdminEmails: [
-    'henryoverbeeke@gmail.com',
-    'claireoverbeeke@gmail.com'
+    'henryoverbeeke@gmail.com'
   ]
 };
