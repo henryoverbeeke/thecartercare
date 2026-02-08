@@ -15,14 +15,6 @@ export const awsConfig = {
 
 // Admin configuration
 export const adminConfig = {
-  // Users with admin access (can view all users, stats, view-as-user)
-  adminEmails: [
-    'henryoverbeeke@gmail.com',
-    'sarahcarter@gmail.com',
-    'claireoverbeeke@gmail.com'
-  ],
-  // Super admins (can disable users, platform lockdown, password changes)
-  superAdminEmails: [
-    'henryoverbeeke@gmail.com'
-  ]
+  // Only the developer can manage admins and has full access
+  developerEmail: 'henryoverbeeke@gmail.com'
 };

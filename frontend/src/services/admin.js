@@ -10,7 +10,7 @@ import {
   CognitoIdentityProviderClient,
   AdminSetUserPasswordCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
-import { awsConfig } from '../config/aws-config';
+import { awsConfig, adminConfig } from '../config/aws-config';
 
 let docClient = null;
 let cognitoClient = null;
@@ -158,4 +158,61 @@ export const adminSetUserPassword = async (username, newPassword) => {
   });
 
   return cognitoClient.send(command);
+};
+
+// Admin management operations (Developer only)
+export const getAdminUsers = async () => {
+  const command = new GetCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Key: { settingId: 'admins' },
+  });
+  const response = await docClient.send(command);
+  return response.Item?.adminEmails || [];
+};
+
+export const addAdminUser = async (email, addedBy) => {
+  // Prevent adding the developer email to admin list
+  if (email === adminConfig.developerEmail) {
+    throw new Error('Cannot add developer as admin - they already have full developer privileges');
+  }
+
+  const currentAdmins = await getAdminUsers();
+  if (currentAdmins.includes(email)) {
+    throw new Error('User is already an admin');
+  }
+
+  const updatedAdmins = [...currentAdmins, email];
+  const command = new PutCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Item: {
+      settingId: 'admins',
+      adminEmails: updatedAdmins,
+      updatedAt: new Date().toISOString(),
+      updatedBy: addedBy,
+    },
+  });
+  await docClient.send(command);
+  return updatedAdmins;
+};
+
+export const removeAdminUser = async (email, removedBy) => {
+  // Prevent removing the developer email (though it shouldn't be in the list anyway)
+  if (email === adminConfig.developerEmail) {
+    throw new Error('Cannot remove developer privileges');
+  }
+
+  const currentAdmins = await getAdminUsers();
+  const updatedAdmins = currentAdmins.filter(e => e !== email);
+
+  const command = new PutCommand({
+    TableName: awsConfig.dynamoTables.platform,
+    Item: {
+      settingId: 'admins',
+      adminEmails: updatedAdmins,
+      updatedAt: new Date().toISOString(),
+      updatedBy: removedBy,
+    },
+  });
+  await docClient.send(command);
+  return updatedAdmins;
 };

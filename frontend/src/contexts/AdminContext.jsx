@@ -5,6 +5,9 @@ const AdminContext = createContext(null);
 export function AdminProvider({ children }) {
   // View-as-user state: when set, admin views the app as this user
   const [viewAsUser, setViewAsUser] = useState(null);
+  
+  // Developer view mode: controls what the developer sees
+  const [devViewMode, setDevViewMode] = useState('developer'); // 'developer', 'admin', 'user'
 
   const startViewingAs = (userData) => {
     setViewAsUser({
@@ -23,6 +26,8 @@ export function AdminProvider({ children }) {
     startViewingAs,
     stopViewingAs,
     isViewingAsUser: !!viewAsUser,
+    devViewMode,
+    setDevViewMode,
   };
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

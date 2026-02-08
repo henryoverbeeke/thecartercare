@@ -8,7 +8,7 @@ import {
 import { CognitoIdentityClient } from '@aws-sdk/client-cognito-identity';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
 import { awsConfig, adminConfig } from '../config/aws-config';
-import { initAdminDB, saveUser, getUser, getPlatformLockdown } from '../services/admin';
+import { initAdminDB, saveUser, getUser, getPlatformLockdown, getAdminUsers } from '../services/admin';
 
 const userPool = new CognitoUserPool({
   UserPoolId: awsConfig.userPoolId,
@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
   const [credentials, setCredentials] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [isLockdown, setIsLockdown] = useState(false);
+  const [adminEmails, setAdminEmails] = useState([]);
 
   useEffect(() => {
     checkAuth();
@@ -55,15 +56,23 @@ export function AuthProvider({ children }) {
               initAdminDB(creds);
 
               const email = userData.email;
-              const isSuperAdmin = adminConfig.superAdminEmails.includes(email);
+              const isDeveloper = email === adminConfig.developerEmail;
+
+              // Load admin users from DynamoDB
+              try {
+                const admins = await getAdminUsers();
+                setAdminEmails(admins);
+              } catch (e) {
+                console.error('Error loading admin users:', e);
+              }
 
               // Check platform lockdown
               try {
                 const lockdownStatus = await getPlatformLockdown();
                 setIsLockdown(lockdownStatus.enabled);
 
-                // If lockdown is enabled and user is not super admin, block access
-                if (lockdownStatus.enabled && !isSuperAdmin) {
+                // If lockdown is enabled and user is not developer, block access
+                if (lockdownStatus.enabled && !isDeveloper) {
                   setAuthError('Platform is currently in lockdown mode. Please try again later.');
                   cognitoUser.signOut();
                   setUser(null);
@@ -186,14 +195,22 @@ export function AuthProvider({ children }) {
             if (creds) {
               initAdminDB(creds);
 
-              const isSuperAdmin = adminConfig.superAdminEmails.includes(email);
+              const isDeveloper = email === adminConfig.developerEmail;
+
+              // Load admin users from DynamoDB
+              try {
+                const admins = await getAdminUsers();
+                setAdminEmails(admins);
+              } catch (e) {
+                console.error('Error loading admin users:', e);
+              }
 
               // Check platform lockdown
               try {
                 const lockdownStatus = await getPlatformLockdown();
                 setIsLockdown(lockdownStatus.enabled);
 
-                if (lockdownStatus.enabled && !isSuperAdmin) {
+                if (lockdownStatus.enabled && !isDeveloper) {
                   setAuthError('Platform is currently in lockdown mode. Please try again later.');
                   cognitoUser.signOut();
                   setUser(null);
@@ -260,11 +277,11 @@ export function AuthProvider({ children }) {
     setAuthError(null);
   };
 
-  // Check if current user is admin
-  const isAdmin = user?.email && adminConfig.adminEmails.includes(user.email);
+  // Check if current user is admin (loaded from DynamoDB)
+  const isAdmin = user?.email && (adminEmails.includes(user.email) || user.email === adminConfig.developerEmail);
 
-  // Check if current user is super admin
-  const isSuperAdmin = user?.email && adminConfig.superAdminEmails.includes(user.email);
+  // Check if current user is developer (only henryoverbeeke@gmail.com)
+  const isDeveloper = user?.email === adminConfig.developerEmail;
 
   const value = {
     user,
@@ -277,8 +294,18 @@ export function AuthProvider({ children }) {
     authError,
     clearAuthError,
     isAdmin,
-    isSuperAdmin,
+    isSuperAdmin: isDeveloper, // Keep for backwards compatibility
+    isDeveloper,
     isLockdown,
+    adminEmails,
+    refreshAdminList: async () => {
+      try {
+        const admins = await getAdminUsers();
+        setAdminEmails(admins);
+      } catch (e) {
+        console.error('Error refreshing admin list:', e);
+      }
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
