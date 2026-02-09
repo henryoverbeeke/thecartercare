@@ -1,9 +1,48 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Dumbbell, Utensils, Camera, TrendingUp, Sparkles, ArrowRight, Check, Star, Users, Award, Zap } from 'lucide-react';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [keySequence, setKeySequence] = useState('');
+  const [showSecretReview, setShowSecretReview] = useState(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Only capture numeric keys
+      if (e.key >= '0' && e.key <= '9') {
+        setKeySequence(prev => {
+          const newSequence = (prev + e.key).slice(-3); // Keep only last 3 digits
+          
+          // Check if the sequence is 999
+          if (newSequence === '999') {
+            setShowSecretReview(true);
+            return '';
+          }
+          
+          return newSequence;
+        });
+
+        // Clear the sequence after 2 seconds of no typing
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
+          setKeySequence('');
+        }, 2000);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const features = [
     {
@@ -66,6 +105,20 @@ export default function Landing() {
       rating: 5,
     },
   ];
+
+  // Secret testimonial that appears when user types 999
+  const secretTestimonial = {
+    name: 'Vivian B.',
+    role: 'Gained 1,000 lbs',
+    quote: 'I can\'t believe how amazing Carter Care has been for me! When I started, I never imagined I\'d gain 1,000 pounds so fast! The tracking features made it incredibly easy to monitor my progress every single day. This transformation happened so quickly, and I owe it all to Carter Care. Absolutely life-changing!',
+    rating: 5,
+    isSecret: true,
+  };
+
+  // Combine testimonials, adding secret one if unlocked
+  const displayedTestimonials = showSecretReview 
+    ? [...testimonials, secretTestimonial] 
+    : testimonials;
 
   const stats = [
     { value: '10K+', label: 'Active Users' },
@@ -285,15 +338,21 @@ export default function Landing() {
         </motion.div>
 
         <div className="testimonials-grid">
-          {testimonials.map((testimonial, index) => (
+          {displayedTestimonials.map((testimonial, index) => (
             <motion.div
               key={testimonial.name}
-              className="testimonial-card"
+              className={`testimonial-card ${testimonial.isSecret ? 'secret-testimonial' : ''}`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
             >
+              {testimonial.isSecret && (
+                <div className="secret-badge">
+                  <Sparkles size={14} />
+                  <span>Secret Unlocked!</span>
+                </div>
+              )}
               <div className="testimonial-stars">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star key={i} size={16} fill="#d4a853" color="#d4a853" />

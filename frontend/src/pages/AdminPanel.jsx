@@ -84,6 +84,17 @@ export default function AdminPanel() {
     }
   }, [credentials]);
 
+  // Debug effect to log permission changes
+  useEffect(() => {
+    console.log('AdminPanel permissions updated:', {
+      isDeveloper,
+      isSuperUser,
+      devViewMode,
+      effectiveIsDeveloper,
+      effectiveIsSuperUser,
+    });
+  }, [isDeveloper, isSuperUser, devViewMode, effectiveIsDeveloper, effectiveIsSuperUser]);
+
   const loadData = async () => {
     try {
       const [usersData, lockdownData] = await Promise.all([
@@ -566,6 +577,17 @@ export default function AdminPanel() {
             <div className="admin-control-header">
               <ShieldAlert size={24} color="#ef4444" />
               <h3>Platform Management</h3>
+              <span style={{ 
+                marginLeft: 'auto', 
+                padding: '4px 12px', 
+                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                color: '#000',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+              }}>
+                👑 Developer Mode Active
+              </span>
             </div>
             <div className="admin-control-body">
               <div className="lockdown-control">
@@ -588,8 +610,13 @@ export default function AdminPanel() {
                 </div>
                 <button
                   onClick={handleToggleLockdown}
-                  disabled={actionLoading === 'lockdown'}
+                  disabled={actionLoading === 'lockdown' || !effectiveIsDeveloper}
                   className={`lockdown-toggle ${lockdownEnabled ? 'active' : ''}`}
+                  style={{
+                    opacity: effectiveIsDeveloper ? 1 : 0.5,
+                    cursor: effectiveIsDeveloper ? 'pointer' : 'not-allowed',
+                  }}
+                  title={!effectiveIsDeveloper ? 'Only available in Developer mode (Press Y 3 times)' : ''}
                 >
                   {actionLoading === 'lockdown' ? (
                     <div className="spinner-small" />
@@ -602,6 +629,7 @@ export default function AdminPanel() {
                     <>
                       <Lock size={16} />
                       Enable Lockdown
+                      {!effectiveIsDeveloper && <span style={{ marginLeft: '8px', fontSize: '12px' }}>🔒</span>}
                     </>
                   )}
                 </button>
