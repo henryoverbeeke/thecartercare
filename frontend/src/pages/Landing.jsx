@@ -8,6 +8,7 @@ export default function Landing() {
   const [keySequence, setKeySequence] = useState('');
   const [showSecretReview, setShowSecretReview] = useState(false);
   const [showSecretReview2, setShowSecretReview2] = useState(false);
+  const [showSecretReview3, setShowSecretReview3] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -26,6 +27,12 @@ export default function Landing() {
           // Check if the sequence is 222
           if (newSequence === '222') {
             setShowSecretReview2(true);
+            return '';
+          }
+
+          // Check if the sequence is 111
+          if (newSequence === '111') {
+            setShowSecretReview3(true);
             return '';
           }
           
@@ -131,11 +138,21 @@ export default function Landing() {
     isSecret: true,
   };
 
+  // Secret testimonial that appears when user types 111
+  const secretTestimonial3 = {
+    name: 'Gary W.',
+    role: 'Lost 1 lb',
+    quote: 'I lost a whole pound! Sure, I still eat 1,000 quarter pounders a day, but hey that\'s better than the 10,000 I was eating before. Carter Care really opened my eyes to portion control. The meal tracker was a wake up call — I didn\'t even realize I was hitting 2.5 million calories a day. Baby steps, people. Baby steps.',
+    rating: 5,
+    isSecret: true,
+  };
+
   // Combine testimonials, adding secret ones if unlocked
   const displayedTestimonials = [
     ...testimonials,
     ...(showSecretReview ? [secretTestimonial] : []),
     ...(showSecretReview2 ? [secretTestimonial2] : []),
+    ...(showSecretReview3 ? [secretTestimonial3] : []),
   ];
 
   const stats = [
