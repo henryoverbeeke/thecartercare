@@ -7,6 +7,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const [keySequence, setKeySequence] = useState('');
   const [showSecretReview, setShowSecretReview] = useState(false);
+  const [showSecretReview2, setShowSecretReview2] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -19,6 +20,12 @@ export default function Landing() {
           // Check if the sequence is 999
           if (newSequence === '999') {
             setShowSecretReview(true);
+            return '';
+          }
+
+          // Check if the sequence is 222
+          if (newSequence === '222') {
+            setShowSecretReview2(true);
             return '';
           }
           
@@ -115,10 +122,21 @@ export default function Landing() {
     isSecret: true,
   };
 
-  // Combine testimonials, adding secret one if unlocked
-  const displayedTestimonials = showSecretReview 
-    ? [...testimonials, secretTestimonial] 
-    : testimonials;
+  // Secret testimonial that appears when user types 222
+  const secretTestimonial2 = {
+    name: 'Big Dave K.',
+    role: 'Lost 100 lbs (700 → 600)',
+    quote: 'I used to be 700 pounds, but thanks to Carter Care I\'m down to 600! The app really helped me track my meals. I still eat 3 quarter pounders a day but now I log every single one. My doctor said he\'s never seen progress like this. Carter Care helped me realize that accountability is everything. 10/10 would recommend to anyone on a similar journey!',
+    rating: 5,
+    isSecret: true,
+  };
+
+  // Combine testimonials, adding secret ones if unlocked
+  const displayedTestimonials = [
+    ...testimonials,
+    ...(showSecretReview ? [secretTestimonial] : []),
+    ...(showSecretReview2 ? [secretTestimonial2] : []),
+  ];
 
   const stats = [
     { value: '10K+', label: 'Active Users' },
