@@ -9,6 +9,7 @@ export default function Landing() {
   const [showSecretReview, setShowSecretReview] = useState(false);
   const [showSecretReview2, setShowSecretReview2] = useState(false);
   const [showSecretReview3, setShowSecretReview3] = useState(false);
+  const [showSecretReview4, setShowSecretReview4] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -33,6 +34,12 @@ export default function Landing() {
           // Check if the sequence is 111
           if (newSequence === '111') {
             setShowSecretReview3(true);
+            return '';
+          }
+
+          // Check if the sequence is 444
+          if (newSequence === '444') {
+            setShowSecretReview4(true);
             return '';
           }
           
@@ -147,12 +154,22 @@ export default function Landing() {
     isSecret: true,
   };
 
+  // Secret testimonial that appears when user types 444
+  const secretTestimonial4 = {
+    name: 'Big Neck Jr.',
+    role: 'Drank 100,000 grimace shakes',
+    quote: 'ok so i drink like 100000 grimase shakes a day and also like 200 oreo blizards and carter care helpd me track all of them!! my mom says i need to stop but i told her im on a meal plan now so its fine. the app is relly good becuz it counts all my caleries and stuff. i also ate 47 happy meals yesterday but thats not as bad as last week wen it was 50 so im improveing. best app ever i give it 5 stars!!!',
+    rating: 5,
+    isSecret: true,
+  };
+
   // Combine testimonials, adding secret ones if unlocked
   const displayedTestimonials = [
     ...testimonials,
     ...(showSecretReview ? [secretTestimonial] : []),
     ...(showSecretReview2 ? [secretTestimonial2] : []),
     ...(showSecretReview3 ? [secretTestimonial3] : []),
+    ...(showSecretReview4 ? [secretTestimonial4] : []),
   ];
 
   const stats = [
