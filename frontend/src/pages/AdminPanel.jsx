@@ -739,34 +739,38 @@ export default function AdminPanel() {
                           )}
                         </button>
                       )}
-                      <button
-                        onClick={() => openPasswordModal(u)}
-                        className="btn-admin-action password"
-                        title="Change Password"
-                      >
-                        <Key size={16} />
-                        Password
-                      </button>
-                      <button
-                        onClick={() => handleToggleUserStatus(u.email, u.isDisabled)}
-                        disabled={actionLoading === u.email}
-                        className={`btn-admin-action ${u.isDisabled ? 'enable' : 'disable'}`}
-                        title={u.isDisabled ? 'Enable User' : 'Disable User'}
-                      >
-                        {actionLoading === u.email ? (
-                          <div className="spinner-small" />
-                        ) : u.isDisabled ? (
-                          <>
-                            <UserCheck size={16} />
-                            Enable
-                          </>
-                        ) : (
-                          <>
-                            <UserX size={16} />
-                            Disable
-                          </>
-                        )}
-                      </button>
+                      {effectiveIsDeveloper && (
+                        <button
+                          onClick={() => openPasswordModal(u)}
+                          className="btn-admin-action password"
+                          title="Change Password"
+                        >
+                          <Key size={16} />
+                          Password
+                        </button>
+                      )}
+                      {effectiveIsDeveloper && (
+                        <button
+                          onClick={() => handleToggleUserStatus(u.email, u.isDisabled)}
+                          disabled={actionLoading === u.email}
+                          className={`btn-admin-action ${u.isDisabled ? 'enable' : 'disable'}`}
+                          title={u.isDisabled ? 'Enable User' : 'Disable User'}
+                        >
+                          {actionLoading === u.email ? (
+                            <div className="spinner-small" />
+                          ) : u.isDisabled ? (
+                            <>
+                              <UserCheck size={16} />
+                              Enable
+                            </>
+                          ) : (
+                            <>
+                              <UserX size={16} />
+                              Disable
+                            </>
+                          )}
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

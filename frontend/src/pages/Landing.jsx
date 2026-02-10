@@ -10,6 +10,8 @@ export default function Landing() {
   const [showSecretReview2, setShowSecretReview2] = useState(false);
   const [showSecretReview3, setShowSecretReview3] = useState(false);
   const [showSecretReview4, setShowSecretReview4] = useState(false);
+  const [showSecretReview5, setShowSecretReview5] = useState(false);
+  const [showSecretReview6, setShowSecretReview6] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -40,6 +42,18 @@ export default function Landing() {
           // Check if the sequence is 444
           if (newSequence === '444') {
             setShowSecretReview4(true);
+            return '';
+          }
+
+          // Check if the sequence is 333
+          if (newSequence === '333') {
+            setShowSecretReview5(true);
+            return '';
+          }
+
+          // Check if the sequence is 555
+          if (newSequence === '555') {
+            setShowSecretReview6(true);
             return '';
           }
           
@@ -163,6 +177,24 @@ export default function Landing() {
     isSecret: true,
   };
 
+  // Secret testimonial that appears when user types 333
+  const secretTestimonial5 = {
+    name: 'Tony "Thunder" R.',
+    role: 'Survived the storm',
+    quote: 'Before Carter Care I had explosive diarrhea every single day. Like EVERY day. I\'m talking code red situations at work, at the gym, at my kid\'s soccer game. Turns out I was eating 14 gas station burritos a day and didn\'t even realize it until I started logging my meals. Now I\'m down to 6 and the situation has improved dramatically. My coworkers finally sit near me at lunch again. This app literally saved my social life. Thank you Carter Care!!!',
+    rating: 5,
+    isSecret: true,
+  };
+
+  // Secret testimonial that appears when user types 555
+  const secretTestimonial6 = {
+    name: 'Ronald M.',
+    role: 'Lives at McDonald\'s',
+    quote: 'So I basically live at McDonald\'s. Like I literally live there. I sleep in the booth by the PlayPlace and the night crew just lets me stay. Carter Care helped me realize I was eating 37 Big Macs a day which is apparently "not normal" according to my doctor. The app also tracked that I haven\'t left the building in 8 months. But the free wifi is great and I log all my meals right from my booth. 5 stars, would recommend to anyone who calls McDonald\'s home.',
+    rating: 5,
+    isSecret: true,
+  };
+
   // Combine testimonials, adding secret ones if unlocked
   const displayedTestimonials = [
     ...testimonials,
@@ -170,6 +202,8 @@ export default function Landing() {
     ...(showSecretReview2 ? [secretTestimonial2] : []),
     ...(showSecretReview3 ? [secretTestimonial3] : []),
     ...(showSecretReview4 ? [secretTestimonial4] : []),
+    ...(showSecretReview5 ? [secretTestimonial5] : []),
+    ...(showSecretReview6 ? [secretTestimonial6] : []),
   ];
 
   const stats = [
